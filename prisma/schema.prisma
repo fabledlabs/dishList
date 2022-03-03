@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  email     String   @unique
+  name      String
+
+  account   Account @relation(fields: [accountId], references: [id])
+  accountId String
+}
+
+model Account {
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  name           String
+  slug           String   @unique
+  sendDailyEmail Boolean
+
+  stripeCustomerId       String?   @unique
+  stripeSubscriptionId   String?   @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+
+  users      User[]
+  dishes     Dish[]
+  meals      Meal[]
+  plans      Plan[]
+  followedBy Account[] @relation("UserFollows")
+  following  Account[] @relation("UserFollows")
+}
+
+model Dish {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  type        DishType @default(MAIN)
+  ingredients Json
+
+  Account   Account @relation(fields: [accountId], references: [id])
+  accountId String
+  meals     Meal[]
+}
+
+enum DishType {
+  APPETIZER
+  MAIN
+  SIDE
+  DESSERT
+}
+
+model Meal {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+
+  dishes Dish[]
+
+  Account        Account @relation(fields: [accountId], references: [id])
+  accountId      String
+  sundayPlans    Plan[]  @relation("Sunday")
+  mondayPlans    Plan[]  @relation("Monday")
+  tuesdayPlans   Plan[]  @relation("Tuesday")
+  wednesdayPlans Plan[]  @relation("Wednesday")
+  thursdayPlans  Plan[]  @relation("Thursday")
+  fridayPlans    Plan[]  @relation("Friday")
+  saturdayPlans  Plan[]  @relation("Saturday")
+}
+
+model Plan {
+  id        String     @id @default(cuid())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  week      DateTime
+  status    PlanStatus @default(DRAFT)
+
+  sunday      Meal   @relation("Sunday", fields: [sundayId], references: [id])
+  sundayId    String
+  monday      Meal   @relation("Monday", fields: [mondayId], references: [id])
+  mondayId    String
+  tuesday     Meal   @relation("Tuesday", fields: [tuesdayId], references: [id])
+  tuesdayId   String
+  wednesday   Meal   @relation("Wednesday", fields: [wednesdayId], references: [id])
+  wednesdayId String
+  thursday    Meal   @relation("Thursday", fields: [thursdayId], references: [id])
+  thursdayId  String
+  friday      Meal   @relation("Friday", fields: [fridayId], references: [id])
+  fridayId    String
+  saturday    Meal   @relation("Saturday", fields: [saturdayId], references: [id])
+  saturdayId  String
+
+  Account   Account @relation(fields: [accountId], references: [id])
+  accountId String
+}
+
+enum PlanStatus {
+  DRAFT
+  FINAL
+}
